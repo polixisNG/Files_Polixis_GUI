@@ -170,21 +170,25 @@ export default class Node {
 // ------ text info print
                         ctx.fillText(result.keyName, 0, 0);
                         ctx.restore();
-
                     }
-                } else {
+                    let griCodesImg = new Image();
+                    griCodesImg.src = this.avatar;
+                    // ctx.fillStyle = ctx.createPattern(griCodesImg, 'no-repeat')
+
+                    griCodesImg.onload = () => {
+                        this.createCenterImageCanvas(ctx, canvas, griCodesImg);
+                    };
+                }
+                else {
                     alert('error');
                 }
 // ===============================================================END NEW CODE==================================================================
 
                 ctx.save();
                 ctx.beginPath();
-
-
-                ctx.restore();
                 let canvasUrl = '';
                 canvasUrl = canvas.toDataURL();
-
+                ctx.restore();
                 try {
                     mergeImages([
                         {src: canvasUrl, x: 0, y: 0},
@@ -240,6 +244,32 @@ export default class Node {
     }
 
 // ========================================= new =========================================
+    createCenterImageCanvas(ctx, canvas, griCodesImg) {
+        let arcRadiusSize = 130;
+        let startAngle = 0;
+        let endAngle = Math.PI * 2.2;
+        let drawX = 60;
+        let drawY = 60;
+        let dWidth = 280;
+        let dHeight = 280;
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, arcRadiusSize, startAngle, endAngle);
+        ctx.fill();
+        ctx.save();
+        ctx.clip();
+        ctx.drawImage(griCodesImg, drawX, drawY, dWidth, dHeight);
+        ctx.closePath();
+        ctx.restore();
+        if (this.currentResultsLength > 0) {
+            ctx.beginPath();
+            let image = new Image();
+            canvas.crossOrigin = "Anonymous";
+            image.src = canvas.toDataURL("image/png");
+            document.body.appendChild(image);
+            return image.src;
+        }
+    }
+
     creatPieBorder(ctx, borderLineWidth) {
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = borderLineWidth;
