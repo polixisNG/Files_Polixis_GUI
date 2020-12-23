@@ -5,7 +5,6 @@ import Utils from "../utils";
 export default class Node {
     constructor(nodeData = null) {
         if (Utils.isNotNullOrUndefined(nodeData)) {
-
             this.id = nodeData.id.replace(/(\.)|(,)/g, '_');
             this.title = nodeData.title;
             this.ardisId = nodeData.ardisId;
@@ -107,14 +106,14 @@ export default class Node {
                 }
                 xPos = 50;
                 yPos = 50;
-                xmPos = 80;
-                ymPos = 100;
+                xmPos = 100;
+                ymPos = 180;
                 dotName = 'dots_sm';
 
             } else if (this.hasImage) {
                 console.log(this.hasImage);
-                xmPos = 50;
-                ymPos = 100;
+                xmPos = 95;
+                ymPos = 250;
                 // name = 'node-bg';
                 dotName = 'dots_md';
 
@@ -141,8 +140,8 @@ export default class Node {
 
 
                 if (Utils.isNotNullOrUndefined(this.pie) || this.pie !== null) {
-                    canvas.width = 160;
-                    canvas.height = 160;
+                    canvas.width = 250;
+                    canvas.height = 250;
                     let total = results.reduce((sum, {count}) => sum + count, 0);
                     let currentAngle = -0.5 * Math.PI;
                     let centerX = canvas.width / 2;
@@ -152,16 +151,17 @@ export default class Node {
                         this.creatPieBorder(ctx, 3);
 
                         let sliceAngle = (result.count / total) * 2 * Math.PI; // create pie
+                        let piesChartRadiusSize = 125;
                         ctx.beginPath();
                         ctx.save();
-                        ctx.arc(centerX, centerY, canvas.width / 2, currentAngle, currentAngle + sliceAngle);
+                        ctx.arc(centerX, centerY, piesChartRadiusSize, currentAngle, currentAngle + sliceAngle);
                         currentAngle += sliceAngle;
                         ctx.lineTo(centerX, centerY);
                         ctx.fillStyle = result.color;
                         ctx.fill();
 
                         let middleAngle = currentAngle + (-0.5 * sliceAngle); // text position
-                        let pieTextPosition = 60;
+                        let pieTextPosition = 100;
                         let textX = Math.cos(middleAngle) * pieTextPosition + centerX;
                         let textY = Math.sin(middleAngle) * pieTextPosition + centerY;
 
@@ -172,6 +172,7 @@ export default class Node {
                         ctx.fillText(result.keyName.toUpperCase(), 0, 0);// text info print
                         ctx.restore();
                     }
+                    this.createCenterImageCanvas(ctx, canvas, griCodesImg);
                 } else {
                     canvas.width = 300; // destination canvas size
                     canvas.height = 300;
@@ -180,14 +181,15 @@ export default class Node {
                     ctx.arc(0, 0, 300, 0, 300);
                     ctx.drawImage(img, 0, 0, 300, 300);
                 }
-
+                // ctx.save();
+                // ctx.beginPath();
+                // ctx.restore();
                 let canvasUrl = '';
                 canvasUrl = canvas.toDataURL();
-
                 try {
                     mergeImages([
                         {src: canvasUrl, x: 0, y: 0},
-                        {src: this.avatar, x: 11, y: 13},
+                        // {src: this.avatar, x: 0, y: 0},
                         this.moreRelation ? {
                             src: '/images/gray_' + dotName + '.png',
                             x: xmPos,
@@ -197,12 +199,13 @@ export default class Node {
                             this.avatar = b64;
                             elementOptions.classes = this.addClasses();
                             elementOptions.css["background-image"] = b64;
-                            console.log(b64);
                             resolve(elementOptions);
                         }).catch(() => {
+
                         elementOptions.css["background-image"] = this.avatar;
                         console.log("mergeImage ERROR");
                         resolve(elementOptions);
+
                     });
                 } catch (error) {
                     console.error(error);
@@ -237,6 +240,24 @@ export default class Node {
         });
     }
 
+    createCenterImageCanvas(ctx, canvas, griCodesImg) {
+        let arcRadiusSize = 82;
+        let startAngle = 0;
+        let endAngle = Math.PI * 2.2;
+        let drawX = 40;
+        let drawY = 40;
+        let dWidth = 170;
+        let dHeight = 170;
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, arcRadiusSize, startAngle, endAngle);
+        ctx.fill();
+        ctx.save();
+        ctx.clip();
+        ctx.drawImage(griCodesImg, drawX, drawY, dWidth, dHeight);
+        ctx.closePath();
+        ctx.restore();
+    }
+
     creatPieBorder(ctx, borderLineWidth) {
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = borderLineWidth;
@@ -244,7 +265,7 @@ export default class Node {
     }
 
     textStyle(ctx, textX, textY) {
-        let pieTextFontSize = 16;
+        let pieTextFontSize = 19;
         ctx.font = `900 ${pieTextFontSize - this.currentResultsLength}pt Calibri`;
         ctx.fillStyle = "white";
         ctx.textBaseline = "middle";

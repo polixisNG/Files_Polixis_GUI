@@ -4,32 +4,33 @@ import Utils from "../utils";
 
 export default class Node {
     constructor(nodeData = null) {
-        if (Utils.isNotNullOrUndefined(nodeData)) {
 
-            this.id = nodeData.id.replace(/(\.)|(,)/g, '_');
-            this.title = nodeData.title;
+        if (Utils.isNotNullOrUndefined(nodeData)) {
             this.ardisId = nodeData.ardisId;
-            this.subnodeIdList = nodeData.subnodeIDList;
-            this.avatarOriginal = Utils.getNodeImage(nodeData);
-            this.avatar = Utils.getNodeImage(nodeData);
-            this.avatarMerged = Utils.getNodeImage(nodeData);
-            this.hasImage = !Utils.isNullOrUndefined(nodeData.image);
-            this.pie = null;
-            this.endpoint = !Utils.isNullOrUndefined(nodeData.endpoint) ? true : false;
-            this.b64 = '';
-            this.type = nodeData.nodeType;
-            this.fromFirstLayer = false;
-            this.isMainNode = nodeData.isMainNode;
-            this.parentPos = Utils.isNotNullOrUndefined(nodeData.parentPos) ? {
-                x: nodeData.parentPos.x,
-                y: nodeData.parentPos.y
-            } : {x: Math.random() * 1000, y: Math.random() * 1000};
-            this.moreRelation = Utils.isNullOrUndefined(nodeData.moreRelations) ? null : nodeData.moreRelations;
             this.category = Utils.isNullOrUndefined(nodeData.category) ? null : nodeData.category.map(item => {
                 let newItem = item.startsWith("#") ? item.substr(1) : item;
                 if (newItem.toLowerCase().startsWith("shareholding")) newItem = "shareholding";
                 return newItem.toLowerCase();
             });
+            this.id = nodeData.id.replace(/(\.)|(,)/g, '_');
+            this.isMainNode = nodeData.isMainNode;
+            this.moreRelation = Utils.isNullOrUndefined(nodeData.moreRelations) ? null : nodeData.moreRelations;
+            this.pie = null;
+            this.subnodeIdList = nodeData.subnodeIDList;
+            this.title = nodeData.title;
+            this.avatarOriginal = Utils.getNodeImage(nodeData);
+            this.avatar = Utils.getNodeImage(nodeData);
+            this.avatarMerged = Utils.getNodeImage(nodeData);
+            this.hasImage = !Utils.isNullOrUndefined(nodeData.image);
+            this.endpoint = !Utils.isNullOrUndefined(nodeData.endpoint) ? true : false;
+            this.b64 = '';
+            this.type = nodeData.nodeType;
+            this.fromFirstLayer = false;
+            this.parentPos = Utils.isNotNullOrUndefined(nodeData.parentPos) ? {
+                x: nodeData.parentPos.x,
+                y: nodeData.parentPos.y
+            } : {x: Math.random() * 1000, y: Math.random() * 1000};
+
             this.filterEles = this.category || [];
 
             Object.keys(nodeData).forEach((dataKey) => {
@@ -56,7 +57,6 @@ export default class Node {
     }
 
     getCyElement(parentId = null, parent = null) {
-
         return new Promise((resolve) => {
             if (Utils.isNullOrUndefined(parentId)) {
                 parentId = this.parentId;
@@ -87,89 +87,68 @@ export default class Node {
             if (Utils.isNullOrUndefined(this.pie) && this.hasImage) {
                 elementOptions.classes = elementOptions.classes + ' border';
             }
-            let name = '';
             let pies = [];
-            let xPos = 0;
-            let yPos = 0;
             let xmPos = 95;
             let ymPos = 250;
             let dotName = 'dots_md';
 
             if (Utils.isNotNullOrUndefined(this.pie) || this.pie !== null) {
                 Object.keys(this.pie).forEach(pieItem => {
-                    pies.push(pieItem);
+                    let pie = this.pie[pieItem];
+                    pies.push({text: pieItem.toUpperCase(), color: pie.color, count: 1});
                 });
-                pies.sort();
-                for (let i = 0; i < pies.length; i++) {
-                    if (name.indexOf(pies[i]) === -1) {
-                        name += pies[i] + '_';
-                    }
-                }
-                xPos = 50;
-                yPos = 50;
-                xmPos = 80;
-                ymPos = 100;
+                xmPos = 40;
+                ymPos = 85;
                 dotName = 'dots_sm';
 
             } else if (this.hasImage) {
-                console.log(this.hasImage);
-                xmPos = 50;
-                ymPos = 100;
-                // name = 'node-bg';
+                xmPos = 95;
+                ymPos = 250;
                 dotName = 'dots_md';
 
-            } else {
-                // name = 'node-bg';
             }
 
-            let results = [];   // canvas start
-            if (Utils.isNotNullOrUndefined(this.pie) || this.pie !== null) {
-                Object.keys(this.pie).map((keyName) => {
-                    return results.push({keyName: keyName, count: 1, color: this.pie[keyName].color});
-                });
-                this.currentResultsLength = results.length;
-            }
             let img = new Image();
-
             img.crossOrigin = "Anonymous";
-            let griCodesImg = new Image();
-            griCodesImg.src = this.avatar;
-            img.onload = () => {
+            let avatarImage = new Image();
 
+            img.onload = () => {
+                avatarImage.crossOrigin = "Anonymous";
+                avatarImage.src = this.avatar;
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-
+                canvas.width = 130;
+                canvas.height = 130;
 
                 if (Utils.isNotNullOrUndefined(this.pie) || this.pie !== null) {
-                    canvas.width = 160;
-                    canvas.height = 160;
-                    let total = results.reduce((sum, {count}) => sum + count, 0);
+                    this.currentResultsLength = pies.length;
+                    let total = pies.reduce((sum, {count}) => sum + count, 0);
                     let currentAngle = -0.5 * Math.PI;
                     let centerX = canvas.width / 2;
                     let centerY = canvas.height / 2;
 
-                    for (let result of results) {
+                    for (let result of pies) {
                         this.creatPieBorder(ctx, 3);
-
                         let sliceAngle = (result.count / total) * 2 * Math.PI; // create pie
+                        let piesChartRadiusSize = canvas.width / 2;
                         ctx.beginPath();
                         ctx.save();
-                        ctx.arc(centerX, centerY, canvas.width / 2, currentAngle, currentAngle + sliceAngle);
+                        ctx.arc(centerX, centerY, piesChartRadiusSize, currentAngle, currentAngle + sliceAngle);
                         currentAngle += sliceAngle;
                         ctx.lineTo(centerX, centerY);
                         ctx.fillStyle = result.color;
                         ctx.fill();
 
                         let middleAngle = currentAngle + (-0.5 * sliceAngle); // text position
-                        let pieTextPosition = 60;
+                        let pieTextPosition = 39 * canvas.width / 100;
                         let textX = Math.cos(middleAngle) * pieTextPosition + centerX;
                         let textY = Math.sin(middleAngle) * pieTextPosition + centerY;
 
                         this.creatPieBorder(ctx, 2);
                         this.textStyle(ctx, textX, textY);
                         this.textRotate(ctx, currentAngle);
-
-                        ctx.fillText(result.keyName.toUpperCase(), 0, 0);// text info print
+                        // let cText = result.text.split("").join(String.fromCharCode(8201)); // latter spacing
+                        ctx.fillText(result.text, 0, 0);
                         ctx.restore();
                     }
                 } else {
@@ -180,14 +159,12 @@ export default class Node {
                     ctx.arc(0, 0, 300, 0, 300);
                     ctx.drawImage(img, 0, 0, 300, 300);
                 }
-
+                this.createCenterImageCanvas(ctx, canvas, avatarImage, canvas.width);
                 let canvasUrl = '';
                 canvasUrl = canvas.toDataURL();
-
                 try {
                     mergeImages([
                         {src: canvasUrl, x: 0, y: 0},
-                        {src: this.avatar, x: 11, y: 13},
                         this.moreRelation ? {
                             src: '/images/gray_' + dotName + '.png',
                             x: xmPos,
@@ -197,7 +174,6 @@ export default class Node {
                             this.avatar = b64;
                             elementOptions.classes = this.addClasses();
                             elementOptions.css["background-image"] = b64;
-                            console.log(b64);
                             resolve(elementOptions);
                         }).catch(() => {
                         elementOptions.css["background-image"] = this.avatar;
@@ -206,21 +182,20 @@ export default class Node {
                     });
                 } catch (error) {
                     console.error(error);
-                    mergeImages([{
-                        src: canvasUrl,
-                        x: xPos,
-                        y: yPos
-                    }, this.moreRelation ? {
-                        src: '/images/gray_' + dotName + '.png',
-                        x: xmPos,
-                        y: ymPos
-                    } : {src: '/images/aaa.png', x: 0, y: 0}])
+                    mergeImages([
+                        {src: canvasUrl, x: 0, y: 0},
+                        this.moreRelation ? {
+                            src: '/images/gray_' + dotName + '.png',
+                            x: xmPos,
+                            y: ymPos
+                        } : {src: '/images/aaa.png', x: 0, y: 0}])
                         .then(b64 => {
-                            this.b64 = b64;
+                            this.avatar = b64;
                             elementOptions.classes = this.addClasses();
                             elementOptions.css["background-image"] = b64;
                             resolve(elementOptions);
                         }).catch(() => {
+                        elementOptions.css["background-image"] = this.avatar;
                         console.log("mergeImage ERROR");
                         resolve(elementOptions);
                     });
@@ -232,9 +207,29 @@ export default class Node {
                 resolve(elementOptions);
                 console.log(error);
             };
+
+
         }).catch((error) => {
             console.log("getCyNodeError", error);
         });
+    }
+
+    createCenterImageCanvas(ctx, canvas, avatarImage, percentToCanvas) {
+        let arcRadiusSize = 32 * percentToCanvas / 100;
+        let startAngle = 0;
+        let endAngle = Math.PI * 2.2;
+        let drawX = 17 * percentToCanvas / 100;
+        let drawY = 17 * percentToCanvas / 100;
+        let dWidth = 66 * percentToCanvas / 100;
+        let dHeight = 66 * percentToCanvas / 100;
+        ctx.beginPath();
+        ctx.arc(percentToCanvas / 2, percentToCanvas / 2, arcRadiusSize, startAngle, endAngle);
+        ctx.fill();
+        ctx.save();
+        ctx.clip();
+        ctx.drawImage(avatarImage, drawX, drawY, dWidth, dHeight);
+        ctx.closePath();
+        ctx.restore();
     }
 
     creatPieBorder(ctx, borderLineWidth) {
@@ -244,9 +239,8 @@ export default class Node {
     }
 
     textStyle(ctx, textX, textY) {
-        let pieTextFontSize = 16;
-        ctx.font = `900 ${pieTextFontSize - this.currentResultsLength}pt Calibri`;
-        ctx.fillStyle = "white";
+        ctx.font = `${11 - this.currentResultsLength}pt Calibri`;
+        ctx.fillStyle = "#ffffff";
         ctx.textBaseline = "middle";
         ctx.textAlign = "center";
         ctx.translate(textX, textY);
